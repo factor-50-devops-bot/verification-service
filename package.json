@@ -1,0 +1,13 @@
+{
+  "name": "verification-service",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@azure/cosmos": "^3.6.2",
+    "yoti": "^3.9.0"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,37 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get",
+        "post"
+      ],
+      "route": "user/{userId}/{token}"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "outputDocument",
+      "databaseName": "verificationDB",
+      "collectionName": "verification-attempts",
+      "createIfNotExists": true,
+      "connectionStringSetting": "verification-service_DOCUMENTDB",
+      "direction": "out"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "inputDocuments",
+      "databaseName": "verificationDB",
+      "collectionName": "verification-attempts",
+      "connectionStringSetting": "verification-service_DOCUMENTDB",
+      "direction": "in"
+    }
+  ]
+}
