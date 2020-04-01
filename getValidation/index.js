@@ -23,31 +23,30 @@ const userServiceUrl = "" //Assumes in the form module/api/function/userId:
 const ageLimit = 18; //current cutOff for age
 
 const doValidation = function (context, yotiResponse, user){
-  var dobMatch = (user.dob === yotiResponse.dob);
-  var ageMatch = getAge(user.dob, ageLimit);
-  var userNotAlreadyVerified = getValidationsForRMId(context, user).catch(err => context.log("error in getting cosmos data"));
+  var dobMatch = (user.dob === yotiResponse.dob); // Check yoti has given us a user with matching dob
+  var ageMatch = getAge(user.dob, ageLimit); // Check user is old enough
+  var userNotAlreadyVerified = getValidationsForRMId(context, user).catch(err => context.log("error in getting cosmos data")); // Check yotiId never used for successful validation before
   
   if (dobMatch && ageMatch && userNotAlreadyVerified){
     var verified = true;
   } else {
     var verified = false;
   }
-
+  
+  // Save audit record
   context.bindings.outputDocument = {timestamp: Date(), userId: user.userId, rememberMeId: user.rememberMeId, verified: verified, payload: yotiResponse}
-  if (verified){
-    updateUserModule(user.userId,context);
-  }else{
-    context.done();
-  }
+  // Notify user service
+  updateUserModule(user.userId,context,verified);
+
 }
 
-const updateUserModule = function (userId, context){
+const updateUserModule = function (userId, context,verified){
   fetch(userServiceUrl + "/setValidation/", {
     method: 'post',
     headers: {
       "Content-type": "application/json"
     },
-    body: {userId: userId, verified: true}
+    body: {userId: userId, verified: verified} // Note updates verified status to true or false, null status indicates never attempted validation
   })
   .then(context.done())
   .catch(function (error) {
@@ -60,9 +59,9 @@ const getAge = function (dob, ageLimit){
   var today = new Date();
   var objDoB = {day: dateOfBirth.getDate(), month: dateOfBirth.getMonth(), year: dateOfBirth.getFullYear()};
   var objToday = {day: today.getDate(), month: day.getMonth(), year: dateOfBirth.getFullYear()};
-  if (objToday.year - objDob.year >= ageLimit + 1 ){
+  if (objToday.year - objDob.year > ageLimit ){
     return true;
-  } else if ((objToday.year - objDob.year == ageLimit) && ((objToday.month > objDob.month)||(objToday.month == objDob.month) && (objToday.day >= objDob.day))){
+  } else if ((objToday.year - objDob.year == ageLimit) && ((objToday.month > objDob.month)||((objToday.month == objDob.month) && (objToday.day >= objDob.day)))){
     return true;
   } else {
     return false;
@@ -89,12 +88,6 @@ const  getValidationsForRMId = async function (context, user){
   }
 }
 
-const getUserDetails = async function (userId, context, yotiResponse){
-  
-  const user = await fetch(userServiceUrl+"/getUserById/"+userId);
-  return (user);
-}
-
 const getYotiDetails = function (activityDetails){
   
   if (activityDetails){
@@ -107,9 +100,11 @@ const getYotiDetails = function (activityDetails){
 }
 
 const getAllDetails = function (context, req, activityDetails){
-  const user = getUserDetails(req.userId).catch(err => context.log("User fetch error"));
   const yotiResponse = getYotiDetails(activityDetails);
-  doValidation(context,yotiResponse,user);
+  const user = fetch(userServiceUrl+"/getUserById/"+req.userId)
+        .then(response => response.json()
+        .then(user => doValidation(context,yotiResponse,user)))
+        .catch(err => context.log("User fetch error:" + err));
 }
 
 module.exports = function (context, req) {
