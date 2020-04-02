@@ -9,7 +9,7 @@
         "get",
         "post"
       ],
-      "route": "user/{userId}/{token}"
+      "route": "getValidation/{userId}/{token}"
     },
     {
       "type": "http",
