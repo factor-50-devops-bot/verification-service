@@ -24,8 +24,8 @@ const ageLimit = 18; //current cutOff for age
 
 const doValidation = function (context, yotiResponse, user){
   var dobMatch = (user.dob === yotiResponse.dob); // Check yoti has given us a user with matching dob
-  var ageMatch = getAge(user.dob, ageLimit); // Check user is old enough
-  var userNotAlreadyVerified = getValidationsForRMId(yotiResponse).catch(err => context.log("error in getting cosmos data")); // Check yotiId never used for successful validation before
+  var ageMatch = getAgeIsAcceptable(user.dob, ageLimit); // Check user is old enough
+  var userNotAlreadyVerified = getRMIdAlreadyVerified(yotiResponse).catch(err => context.log("error in getting cosmos data")); // Check yotiId never used for successful validation before
   
   if (dobMatch && ageMatch && userNotAlreadyVerified){
     var verified = true;
@@ -54,21 +54,14 @@ const updateUserModule = function (userId, context,verified){
   });
 }
 
-const getAge = function (dob, ageLimit){
+const getAgeIsAcceptable = function (dob, ageLimit){
   const dateOfBirth = new Date(dob);
+  const dateOfAcceptability = new Date(dateOfBirth.getFullYear() + ageLimit, dateOfBirth.getMonth(), dateOfBirth.getDate());
   const today = new Date();
-  const objDob = {day: dateOfBirth.getDate(), month: dateOfBirth.getMonth(), year: dateOfBirth.getFullYear()};
-  const objToday = {day: today.getDate(), month: day.getMonth(), year: dateOfBirth.getFullYear()};
-  if (objToday.year - objDob.year > ageLimit ){
-    return true;
-  } else if ((objToday.year - objDob.year == ageLimit) && ((objToday.month > objDob.month)||((objToday.month == objDob.month) && (objToday.day >= objDob.day)))){
-    return true;
-  } else {
-    return false;
-  }
+  return (today >= dateOfAcceptability);
 }
 
-const  getValidationsForRMId = async function (yotiResponse){
+const getRMIdAlreadyVerified = async function (yotiResponse){
   const querySpec = {
     query: "SELECT * FROM c WHERE c.rememberMeId = @rmid AND verified = true",
     parameters: [
