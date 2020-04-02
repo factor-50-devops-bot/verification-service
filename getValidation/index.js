@@ -25,7 +25,7 @@ const ageLimit = 18; //current cutOff for age
 const doValidation = function (context, yotiResponse, user){
   var dobMatch = (user.dob === yotiResponse.dob); // Check yoti has given us a user with matching dob
   var ageMatch = getAge(user.dob, ageLimit); // Check user is old enough
-  var userNotAlreadyVerified = getValidationsForRMId(context, user).catch(err => context.log("error in getting cosmos data")); // Check yotiId never used for successful validation before
+  var userNotAlreadyVerified = getValidationsForRMId(yotiResponse).catch(err => context.log("error in getting cosmos data")); // Check yotiId never used for successful validation before
   
   if (dobMatch && ageMatch && userNotAlreadyVerified){
     var verified = true;
@@ -55,10 +55,10 @@ const updateUserModule = function (userId, context,verified){
 }
 
 const getAge = function (dob, ageLimit){
-  var dateOfBirth = new Date(dob);
-  var today = new Date();
-  var objDoB = {day: dateOfBirth.getDate(), month: dateOfBirth.getMonth(), year: dateOfBirth.getFullYear()};
-  var objToday = {day: today.getDate(), month: day.getMonth(), year: dateOfBirth.getFullYear()};
+  const dateOfBirth = new Date(dob);
+  const today = new Date();
+  const objDob = {day: dateOfBirth.getDate(), month: dateOfBirth.getMonth(), year: dateOfBirth.getFullYear()};
+  const objToday = {day: today.getDate(), month: day.getMonth(), year: dateOfBirth.getFullYear()};
   if (objToday.year - objDob.year > ageLimit ){
     return true;
   } else if ((objToday.year - objDob.year == ageLimit) && ((objToday.month > objDob.month)||((objToday.month == objDob.month) && (objToday.day >= objDob.day)))){
@@ -68,13 +68,13 @@ const getAge = function (dob, ageLimit){
   }
 }
 
-const  getValidationsForRMId = async function (context, user){
+const  getValidationsForRMId = async function (yotiResponse){
   const querySpec = {
     query: "SELECT * FROM c WHERE c.rememberMeId = @rmid AND verified = true",
     parameters: [
       {
         name: "@rmid",
-        value: user.rememberMeId
+        value: yotiResponse.rememberMeId
       }
     ]
   };
