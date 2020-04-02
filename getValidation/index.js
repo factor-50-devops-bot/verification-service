@@ -33,8 +33,18 @@ const doValidation = function (context, yotiResponse, user){
     var verified = false;
   }
   
+  const outputResponse = {timestamp: Date(), userId: user.userId, rememberMeId: user.rememberMeId, verified: verified, payload: yotiResponse};
+
   // Save audit record
-  context.bindings.outputDocument = {timestamp: Date(), userId: user.userId, rememberMeId: user.rememberMeId, verified: verified, payload: yotiResponse}
+  context.bindings.outputDocument = outputResponse;
+  // Generate HTTP response
+  context.res = {
+    status: 200, /* Defaults to 200 */
+    body: outputResponse,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+    };
   // Notify user service
   updateUserModule(user.userId,context,verified);
 
