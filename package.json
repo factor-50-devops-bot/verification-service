@@ -10,5 +10,8 @@
     "@azure/cosmos": "^3.6.2",
     "yoti": "^3.9.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
 }
