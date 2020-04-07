@@ -60,9 +60,15 @@ const updateUserModule = function (userId, context, verified) {
 
 const returnResponse = function (context, response, responseError){
         // Generate HTTP response
+    var statusCode;
+    if (responseError) {
+        statusCode = 500;
+    } else {
+        statusCode = response.verified ? 200 : 401
+    }
     context.res = {
-        status: response.verified ? 200 : 500, 
-        body: responseError ? {error: responseError} : {error: "Not verified"},
+        status: statusCode,
+        body: {message: "VerService Complete"},
         headers: {
             'Content-Type': 'application/json'
         }
