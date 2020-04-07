@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "webpack" : "webpack",
+    "build": "webpack",
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
     "@azure/cosmos": "^3.6.2",
     "yoti": "^3.9.0"
   },
-  "devDependencies": {
-    "prettier": "2.0.4"
   }
+    "@babel/core": "^7.4.0",
+    "babel-loader": "^8.0.5",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+    "prettier": "2.0.4"
 }
