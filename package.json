@@ -3,15 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "webpack" : "webpack",
+    "webpack": "webpack",
     "build": "webpack",
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
     "@azure/cosmos": "^3.6.2",
+    "node-fetch": "^2.6.0",
     "yoti": "^3.9.0"
   },
-  "devDependencies":{
+  "devDependencies": {
     "@babel/core": "^7.4.0",
     "babel-loader": "^8.0.5",
     "webpack": "^4.42.1",
