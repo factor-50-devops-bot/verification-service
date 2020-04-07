@@ -9,5 +9,7 @@
     "@azure/cosmos": "^3.6.2",
     "yoti": "^3.9.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "prettier": "2.0.4"
+  }
 }
