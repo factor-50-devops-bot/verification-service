@@ -15,6 +15,12 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
+- task: DotNetCoreCLI@2
+  displayName: DotNetCore build
+  inputs:
+    command: 'build'
+    projects: 'HelpMyStreetFE/HelpMyStreetFE/HelpMyStreetFE.csproj'
+
 - task: Npm@1
   inputs:
     command: 'install'
