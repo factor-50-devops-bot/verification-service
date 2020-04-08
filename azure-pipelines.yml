@@ -32,16 +32,16 @@ steps:
     command: 'custom'
     customCommand: 'run build --production'
 
-- task: DotNetCoreCLI@2
-  displayName: DotNetCore publish
+- task: ArchiveFiles@2
   inputs:
-    command: publish
-    publishWebProjects: True
-    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-    zipAfterPublish: True
+    rootFolderOrFile: '/'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/output.zip'
+    replaceExistingArchive: true
 
 - task: PublishBuildArtifacts@1
   displayName: Publish Build Artefacts
   inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/output.zip' 
     artifactName: 'drop'
