@@ -11,9 +11,9 @@ pool:
 
 steps:
 - task: NodeTool@0
+  displayName: 'Install Node.js'
   inputs:
     versionSpec: '10.x'
-  displayName: 'Install Node.js'
 
 - task: DotNetCoreCLI@2
   displayName: DotNetCore build
@@ -22,9 +22,21 @@ steps:
     projects: '*.csproj'
 
 - task: Npm@1
+  displayName: npm install azure functions core tools
+  inputs:
+    command: 'custom'
+    customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
+
+- task: Npm@1
   displayName: npm install
   inputs:
     command: 'install'
+
+- task: CmdLine@2
+  displayName: func extensions install
+  inputs:
+    script: 'func extensions install'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 - task: Npm@1
   displayName: npm run build
@@ -33,6 +45,7 @@ steps:
     customCommand: 'run build --production'
 
 - task: ArchiveFiles@2
+  displayName: Archive files
   inputs:
     rootFolderOrFile: '$(build.sourcesdirectory)'
     includeRootFolder: false
@@ -41,7 +54,7 @@ steps:
     replaceExistingArchive: true
 
 - task: PublishBuildArtifacts@1
-  displayName: Publish Build Artefacts
+  displayName: Publish build artefacts
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)/output.zip' 
     artifactName: 'drop'
