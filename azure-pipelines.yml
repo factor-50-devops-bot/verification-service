@@ -22,24 +22,26 @@ steps:
     projects: '*.csproj'
 
 - task: Npm@1
+  displayName: npm install
   inputs:
     command: 'install'
 
 - task: Npm@1
+  displayName: npm run build
   inputs:
     command: 'custom'
     customCommand: 'run build --production'
-  
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: 'build/*'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
 
-- task: AzureFunctionApp@1
+- task: DotNetCoreCLI@2
+  displayName: DotNetCore publish
   inputs:
-    azureSubscription: 'Azure subscription 1(1)(cf4b5ad9-1aa8-4960-af9c-01030b3a2662)'
-    appType: 'functionApp'
-    appName: 'helpmystreet-verification-service-dev'
-    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
-    deploymentMethod: 'auto'
+    command: publish
+    publishWebProjects: True
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: True
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Build Artefacts
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+    artifactName: 'drop'
