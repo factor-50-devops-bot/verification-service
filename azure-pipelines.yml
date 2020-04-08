@@ -19,7 +19,7 @@ steps:
   displayName: DotNetCore build
   inputs:
     command: 'build'
-    projects: 'HelpMyStreetFE/HelpMyStreetFE/HelpMyStreetFE.csproj'
+    projects: '*.csproj'
 
 - task: Npm@1
   inputs:
