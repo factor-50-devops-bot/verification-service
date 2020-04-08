@@ -15,25 +15,33 @@ steps:
     versionSpec: '10.x'
   displayName: 'Install Node.js'
 
+- task: DotNetCoreCLI@2
+  displayName: DotNetCore build
+  inputs:
+    command: 'build'
+    projects: '*.csproj'
+
 - task: Npm@1
+  displayName: npm install
   inputs:
     command: 'install'
 
 - task: Npm@1
+  displayName: npm run build
   inputs:
     command: 'custom'
     customCommand: 'run build --production'
-  
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: 'build/*'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
 
-- task: AzureFunctionApp@1
+- task: ArchiveFiles@2
   inputs:
-    azureSubscription: 'Azure subscription 1(1)(cf4b5ad9-1aa8-4960-af9c-01030b3a2662)'
-    appType: 'functionApp'
-    appName: 'helpmystreet-verification-service-dev'
-    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
-    deploymentMethod: 'auto'
+    rootFolderOrFile: '$(build.sourcesdirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/output.zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Build Artefacts
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/output.zip' 
+    artifactName: 'drop'
