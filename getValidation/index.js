@@ -6,7 +6,7 @@ const fetch = require("node-fetch");
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
-const PEM_KEY = process.env["yoti-pem"];
+const PEM_KEY = process.env["yoti-pem"].replace(/\\n/gm, '\n');
 const yotiClient = new yoti.Client(CLIENT_SDK_ID, PEM_KEY);
 
 // Database connection //
@@ -163,7 +163,6 @@ const getAllDetails = function(context, req, activityDetails) {
 };
 
 module.exports = function(context, req) {
-    context.log("Yoti Pem:" + PEM_KEY)
   yotiClient
     .getActivityDetails(req.params.token)
     .then(activityDetails => {
