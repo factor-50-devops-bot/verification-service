@@ -163,10 +163,11 @@ const getAllDetails = function(context, req, activityDetails) {
 };
 
 module.exports = function(context, req) {
+    context.log("Yoti Pem:" + PEM_KEY)
   yotiClient
     .getActivityDetails(req.params.token)
     .then(activityDetails => {
       getAllDetails(context, req, activityDetails);
     })
-    .catch(err => context.log("error: ", err));
+    .catch(err => context.log("Yoti decode error: ", err));
 };
