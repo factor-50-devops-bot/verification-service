@@ -8,6 +8,7 @@ const fetch = require("node-fetch");
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
 const PEM_KEY = process.env["yoti-pem"].replace(/\\n/gm, '\n');
 const yotiClient = new yoti.Client(CLIENT_SDK_ID, PEM_KEY);
+const disablePreviousAuthCheck = (process.env["yoti-previous-auth"] === "true") ? true : false;
 
 // Database connection //
 const endpoint = process.env.COSMOS_API_URL;
@@ -54,7 +55,7 @@ const processValidation = function(user, context, yotiResponse, verificationObje
   var verified =
     verificationObject.dob &&
     verificationObject.age &&
-    verificationObject.previousVerification;
+    (verificationObject.previousVerification || disablePreviousAuthCheck);
   const outputResponse = {
     timestamp: Date(),
     userId: user.id,
@@ -159,7 +160,7 @@ const getAllDetails = function(context, req, activityDetails) {
         getValidationData(context, yotiResponse, person);
       })
     )
-    .catch(err => context.log("User fetch error: " + err));
+    .catch(err => context.log("User fetch error: ", err));
 };
 
 module.exports = function(context, req) {
