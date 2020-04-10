@@ -28,7 +28,7 @@ const userServiceKey = process.env.USER_SERVICE_KEY;
 const ageLimit = 18; //current cutOff for age
 
 const getValidationData = function(context, yotiResponse, user) {
-  console.log("getValidationData");
+  context.log("getValidationData");
   var userDob = new Date(user.userPersonalDetails.dateOfBirth);
   var yotiDob = new Date(yotiResponse.dob);
   var dobMatch = // Check yoti has given us a user with matching dob
@@ -48,13 +48,13 @@ const getValidationData = function(context, yotiResponse, user) {
       processValidation(user, context, yotiResponse, verificationObject);
     })
     .catch(function(error) {
-      console.error("Cosmos fetch error: %s: %s", error.name, error.message);
+      context.error("Cosmos fetch error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
 
 const processValidation = function(user, context, yotiResponse, verificationObject) {
-  console.log("processValidation");
+  context.log("processValidation");
   var verified =
     verificationObject.dob &&
     verificationObject.age &&
@@ -73,7 +73,7 @@ const processValidation = function(user, context, yotiResponse, verificationObje
 };
 
 const updateUserModule = function(userId, context, verified) {
-  console.log("updateUserModule");
+  context.log("updateUserModule");
   fetch(putUserServiceUrl, {
     method: "PUT",
     mode: "same-origin",
@@ -95,13 +95,13 @@ const updateUserModule = function(userId, context, verified) {
       )
     })
     .catch(function(error) {
-      console.error("User Module update verification error: %s: %s", error.name, error.message);
+      context.error("User Module update verification error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
 
 const returnResponse = function(context, response, responseError) {
-  console.log("returnResponse");
+  context.log("returnResponse");
   // Generate HTTP response
   var statusCode;
   if (responseError) {
@@ -120,7 +120,7 @@ const returnResponse = function(context, response, responseError) {
 };
 
 const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
-  console.log("getUserAgeIsAcceptable");
+  context.log("getUserAgeIsAcceptable");
   const dateOfAcceptability = new Date(
     dateOfBirth.getFullYear() + ageLimit,
     dateOfBirth.getMonth(),
@@ -131,7 +131,7 @@ const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
 };
 
 const getRMIdNotAlreadyVerified = function(yotiResponse) {
-  console.log("getRMIdNotAlreadyVerified");
+  context.log("getRMIdNotAlreadyVerified");
   var quotedYotiResponse = "'" + yotiResponse.rememberMeId + "'";
   var query =
     "SELECT * FROM c WHERE c.rememberMeId = " +
@@ -142,7 +142,7 @@ const getRMIdNotAlreadyVerified = function(yotiResponse) {
 };
 
 const getYotiDetails = function(activityDetails) {
-  console.log("getYotiDetails");
+  context.log("getYotiDetails");
   if (activityDetails) {
     const rememberMeId = activityDetails.getRememberMeId();
     const profile = activityDetails.getProfile();
@@ -153,7 +153,7 @@ const getYotiDetails = function(activityDetails) {
 };
 
 const getAllDetails = function(context, req, activityDetails) {
-  console.log("getAllDetails");
+  context.log("getAllDetails");
   const yotiResponse = getYotiDetails(activityDetails);
   const user = fetch(getUserServiceUrl + "?ID=" + req.params.userId, {
     method: "get",
@@ -169,14 +169,13 @@ const getAllDetails = function(context, req, activityDetails) {
       })
     )
     .catch(function(error) {
-      console.error("User fetch error: %s: %s", error.name, error.message);
+      context.error("User fetch error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
 
 module.exports = function(context, req) {
-  console.log("Processing request.");
-  console.log("Processing request for UserID: %d", req.params.userId);
+  context.log("Processing request for UserID: %d", req.params.userId);
   context.res.status = 500;
   yotiClient
     .getActivityDetails(req.params.token)
@@ -184,7 +183,7 @@ module.exports = function(context, req) {
       getAllDetails(context, req, activityDetails);
     })
     .catch(function(error) {
-      console.error("Yoti decode error: %s: %s", error.name, error.message);
+      context.error("Yoti decode error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
   context.done();
