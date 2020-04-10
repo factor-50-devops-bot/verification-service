@@ -113,7 +113,6 @@ const returnResponse = function(context, response, responseError) {
       "Content-Type": "application/json"
     }
   };
-  context.done();
 };
 
 const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
@@ -169,6 +168,7 @@ const getAllDetails = function(context, req, activityDetails) {
 
 module.exports = function(context, req) {
   console.log("Processing request for UserID: %d", req.params.userId);
+  context.res.status = 500;
   yotiClient
     .getActivityDetails(req.params.token)
     .then(activityDetails => {
@@ -178,4 +178,5 @@ module.exports = function(context, req) {
       console.error("Yoti decode error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
+  context.done();
 };
