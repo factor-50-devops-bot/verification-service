@@ -28,6 +28,7 @@ const userServiceKey = process.env.USER_SERVICE_KEY;
 const ageLimit = 18; //current cutOff for age
 
 const getValidationData = function(context, yotiResponse, user) {
+  console.log("getValidationData");
   var userDob = new Date(user.userPersonalDetails.dateOfBirth);
   var yotiDob = new Date(yotiResponse.dob);
   var dobMatch = // Check yoti has given us a user with matching dob
@@ -53,6 +54,7 @@ const getValidationData = function(context, yotiResponse, user) {
 };
 
 const processValidation = function(user, context, yotiResponse, verificationObject) {
+  console.log("processValidation");
   var verified =
     verificationObject.dob &&
     verificationObject.age &&
@@ -71,6 +73,7 @@ const processValidation = function(user, context, yotiResponse, verificationObje
 };
 
 const updateUserModule = function(userId, context, verified) {
+  console.log("updateUserModule");
   fetch(putUserServiceUrl, {
     method: "PUT",
     mode: "same-origin",
@@ -98,6 +101,7 @@ const updateUserModule = function(userId, context, verified) {
 };
 
 const returnResponse = function(context, response, responseError) {
+  console.log("returnResponse");
   // Generate HTTP response
   var statusCode;
   if (responseError) {
@@ -116,6 +120,7 @@ const returnResponse = function(context, response, responseError) {
 };
 
 const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
+  console.log("getUserAgeIsAcceptable");
   const dateOfAcceptability = new Date(
     dateOfBirth.getFullYear() + ageLimit,
     dateOfBirth.getMonth(),
@@ -126,6 +131,7 @@ const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
 };
 
 const getRMIdNotAlreadyVerified = function(yotiResponse) {
+  console.log("getRMIdNotAlreadyVerified");
   var quotedYotiResponse = "'" + yotiResponse.rememberMeId + "'";
   var query =
     "SELECT * FROM c WHERE c.rememberMeId = " +
@@ -136,6 +142,7 @@ const getRMIdNotAlreadyVerified = function(yotiResponse) {
 };
 
 const getYotiDetails = function(activityDetails) {
+  console.log("getYotiDetails");
   if (activityDetails) {
     const rememberMeId = activityDetails.getRememberMeId();
     const profile = activityDetails.getProfile();
@@ -146,6 +153,7 @@ const getYotiDetails = function(activityDetails) {
 };
 
 const getAllDetails = function(context, req, activityDetails) {
+  console.log("getAllDetails");
   const yotiResponse = getYotiDetails(activityDetails);
   const user = fetch(getUserServiceUrl + "?ID=" + req.params.userId, {
     method: "get",
@@ -167,6 +175,7 @@ const getAllDetails = function(context, req, activityDetails) {
 };
 
 module.exports = function(context, req) {
+  console.log("Processing request.");
   console.log("Processing request for UserID: %d", req.params.userId);
   context.res.status = 500;
   yotiClient
