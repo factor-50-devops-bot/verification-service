@@ -46,8 +46,9 @@ const getValidationData = function(context, yotiResponse, user) {
       };
       processValidation(user, context, yotiResponse, verificationObject);
     })
-    .catch(err => {
-      context.log("error in getting cosmos data");
+    .catch(function(error) {
+      console.error("Cosmos fetch error: %s: %s", error.name, error.message);
+      returnResponse(context, outputResponse, error);
     });
 };
 
@@ -91,7 +92,7 @@ const updateUserModule = function(userId, context, verified) {
       )
     })
     .catch(function(error) {
-      console.log("User Module update verification error: ", error);
+      console.error("User Module update verification error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
@@ -160,14 +161,21 @@ const getAllDetails = function(context, req, activityDetails) {
         getValidationData(context, yotiResponse, person);
       })
     )
-    .catch(err => context.log("User fetch error: ", err));
+    .catch(function(error) {
+      console.error("User fetch error: %s: %s", error.name, error.message);
+      returnResponse(context, outputResponse, error);
+    });
 };
 
 module.exports = function(context, req) {
+  console.log("Processing request for UserID: %d", req.params.userId);
   yotiClient
     .getActivityDetails(req.params.token)
     .then(activityDetails => {
       getAllDetails(context, req, activityDetails);
     })
-    .catch(err => context.log("Yoti decode error: ", err));
+    .catch(function(error) {
+      console.error("Yoti decode error: %s: %s", error.name, error.message);
+      returnResponse(context, outputResponse, error);
+    });
 };
