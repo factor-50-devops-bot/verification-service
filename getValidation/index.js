@@ -46,8 +46,9 @@ const getValidationData = function(context, yotiResponse, user) {
       };
       processValidation(user, context, yotiResponse, verificationObject);
     })
-    .catch(err => {
-      context.log("error in getting cosmos data");
+    .catch(function(error) {
+      console.log("Cosmos fetch error: ", error);
+      returnResponse(context, outputResponse, error);
     });
 };
 
@@ -160,7 +161,10 @@ const getAllDetails = function(context, req, activityDetails) {
         getValidationData(context, yotiResponse, person);
       })
     )
-    .catch(err => context.log("User fetch error: ", err));
+    .catch(function(error) {
+      console.log("User fetch error: ", error);
+      returnResponse(context, outputResponse, error);
+    });
 };
 
 module.exports = function(context, req) {
@@ -169,5 +173,8 @@ module.exports = function(context, req) {
     .then(activityDetails => {
       getAllDetails(context, req, activityDetails);
     })
-    .catch(err => context.log("Yoti decode error: ", err));
+    .catch(function(error) {
+      console.log("Yoti decode error: ", error);
+      returnResponse(context, outputResponse, error);
+    });
 };
