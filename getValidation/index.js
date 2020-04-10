@@ -48,7 +48,7 @@ const getValidationData = function(context, yotiResponse, user) {
       processValidation(user, context, yotiResponse, verificationObject);
     })
     .catch(function(error) {
-      context.error("Cosmos fetch error: %s: %s", error.name, error.message);
+      context.log.error("Cosmos fetch error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
@@ -95,7 +95,7 @@ const updateUserModule = function(userId, context, verified) {
       )
     })
     .catch(function(error) {
-      context.error("User Module update verification error: %s: %s", error.name, error.message);
+      context.log.error("User Module update verification error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
@@ -169,7 +169,7 @@ const getAllDetails = function(context, req, activityDetails) {
       })
     )
     .catch(function(error) {
-      context.error("User fetch error: %s: %s", error.name, error.message);
+      context.log.error("User fetch error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
 };
@@ -183,7 +183,7 @@ module.exports = function(context, req) {
       getAllDetails(context, req, activityDetails);
     })
     .catch(function(error) {
-      context.error("Yoti decode error: %s: %s", error.name, error.message);
+      context.log.error("Yoti decode error: %s: %s", error.name, error.message);
       returnResponse(context, outputResponse, error);
     });
   context.done();
