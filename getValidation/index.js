@@ -115,9 +115,8 @@ module.exports = function(context, req) {
   context.log("Processing request for UserID: %d", req.params.userId);
   context.log("Token: %s", req.params.token);
 
-  context.log(getUserServiceUrl);
-  context.log(userServiceKey);
-
+  context.log(getUserServiceUrl + "?ID=" + req.params.userId + "&code=" + userServiceKey);
+  
   var statusCode = 500;
   var response = "";
   
