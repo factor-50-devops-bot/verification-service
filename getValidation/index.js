@@ -82,12 +82,12 @@ const updateUserModule = function(userId, verified) {
   });
 };
 
-const yotiIdMayBeUsed = function(rememberMeId) {
+const yotiIdMayBeUsed = async function(rememberMeId) {
   if (disablePreviousAuthCheck) {
     return true;
   }
   var query = "SELECT * FROM c WHERE c.rememberMeId = '" + rememberMeId + "' AND c.verified = true";
-  var existingUsers = container.items.query(query).fetchAll();
+  var existingUsers = await container.items.query(query).fetchAll();
   return existingUsers.resources.length == 0;
 };
 
@@ -99,7 +99,7 @@ const getYotiDetails = function(activityDetails) {
   return { name: fullName, dob: dob, rememberMeId: rememberMeId };
 };
 
-const getUser = function(userId) { 
+const getUser = async function(userId) { 
   var user = await fetch(getUserServiceUrl + "?ID=" + userId, {
     method: "get",
     headers: {
