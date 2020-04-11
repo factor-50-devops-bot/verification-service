@@ -101,22 +101,15 @@ const getYotiDetails = function(activityDetails) {
 };
 
 const getUser = async function(userId) { 
-  var user;
+  var response = await fetch(getUserServiceUrl + "?ID=" + userId + "&code=" + userServiceKey);
 
-  await fetch(getUserServiceUrl + "?ID=" + userId + "&code=" + userServiceKey)
-  .then(
-    function(response) {
-      if (response.status !== 200) {
-        throw new Error("Non-200 response from User Service: " + response.status);
-      }
+  if (response.status !== 200) {
+    throw new Error("Non-200 response from User Service: " + response.status);
+  }
 
-      response.json().then(function(data) {
-        user = data;
-      });
-    }
-  )
+  var data = await response.json();
 
-  return user;
+  return data;
 };
 
 
