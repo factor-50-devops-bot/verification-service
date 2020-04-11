@@ -99,18 +99,13 @@ const getYotiDetails = function(activityDetails) {
   return { name: fullName, dob: dob, rememberMeId: rememberMeId };
 };
 
-const getUser = function(userId) {
-  fetch(getUserServiceUrl + "?ID=" + userId, {
+const getUser = fetch(getUserServiceUrl + "?ID=" + userId, {
     method: "get",
     headers: {
       "content-type": "application/json",
       "x-functions-key": userServiceKey
     }
-  }).then((user) => {
-    context.log(JSON.stringify(user));
-    return user;
   });
-};
 
 
 module.exports = function(context, req) {
@@ -126,14 +121,15 @@ module.exports = function(context, req) {
     if (yotiActivityDetails == null) { throw new Error("Failed to decrypt token"); }
     var yotiResponse = getYotiDetails(yotiActivityDetails);
     context.log("3");
-    var user = getUser(req.params.userId);
-    if (user == null) { throw new Error("Failed to identify user"); }
-    context.log("4");
-    var verification = verify(user, yotiResponse);
-    var userServiceUpdated = updateUserModule(user.userId, verification.verified);
-    context.log("5");
-    response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
-    statusCode = verification.verified && userServiceUpdated ? 200 : 401;
+    getUser(req.params.userId).then((user) => {
+      if (user == null) { throw new Error("Failed to identify user"); }
+      context.log("4");
+      var verification = verify(user, yotiResponse);
+      var userServiceUpdated = updateUserModule(user.userId, verification.verified);
+      context.log("5");
+      response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
+      statusCode = verification.verified && userServiceUpdated ? 200 : 401;
+    });
   }).catch ((error) => {
     context.log("ERROR!!");
     context.log.error(error.name + ": " + error.message);
