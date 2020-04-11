@@ -126,6 +126,7 @@ module.exports = function(context, req) {
     context.log("3");
     var user = getUser(req.params.userId);
     if (user == null) { throw new Error("Failed to identify user"); }
+    context.log(JSON.stringify(user));
     context.log("4");
     var verification = verify(user, yotiResponse);
     var userServiceUpdated = updateUserModule(user.userId, verification.verified);
