@@ -101,11 +101,10 @@ const getYotiDetails = function(activityDetails) {
 };
 
 const getUser = async function(userId) { 
-  var user = await fetch(getUserServiceUrl + "?ID=" + userId, {
+  var user = await fetch(getUserServiceUrl + "?ID=" + userId + "&code=" + userServiceKey, {
     method: "get",
     headers: {
-      "content-type": "application/json",
-      "x-functions-key": userServiceKey
+      "content-type": "application/json"
     }
   });
   return user;
