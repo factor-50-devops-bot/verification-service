@@ -50,7 +50,7 @@ const verify = function(user, yotiResponse) {
   };
 };
 
-const storeAuditLog = function(user, yotiResponse, verification, userServiceUpdated) {
+const storeAuditLog = async function(user, yotiResponse, verification, userServiceUpdated) {
   const summary = {
     timestamp: Date(),
     userId: user.id,
