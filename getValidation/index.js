@@ -107,7 +107,8 @@ const getUser = function(userId) {
       "x-functions-key": userServiceKey
     }
   }).then((user) => {
-    return user.user;
+    context.log(JSON.stringify(user));
+    return user;
   });
 };
 
@@ -125,6 +126,7 @@ module.exports = function(context, req) {
     var yotiResponse = getYotiDetails(yotiActivityDetails);
     context.log("3");
     var user = getUser(req.params.userId);
+    if (user == null) { throw new Error("Failed to identify user"); }
     context.log("4");
     var verification = verify(user, yotiResponse);
     var userServiceUpdated = updateUserModule(user.userId, verification.verified);
