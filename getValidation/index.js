@@ -100,7 +100,8 @@ const getYotiDetails = function(activityDetails) {
   return { name: fullName, dob: dob, rememberMeId: rememberMeId };
 };
 
-const getUser = async function(userId) { 
+const getUser = async function(context, userId) { 
+  context.log("a");
   var response = await fetch(getUserServiceUrl + "?ID=" + userId + "&code=" + userServiceKey, {
     method: "get",
     headers: {
@@ -108,11 +109,17 @@ const getUser = async function(userId) {
     }
   });
 
+  context.log("b");
+
   if (response.status !== 200) {
     throw new Error("Non-200 response from User Service: " + response.status);
   }
 
+  context.log("c");
+
   var data = await response.json();
+
+  context.log("d");
 
   return data;
 };
@@ -133,7 +140,7 @@ module.exports = function(context, req) {
     if (yotiActivityDetails == null) { throw new Error("Failed to decrypt token"); }
     var yotiResponse = getYotiDetails(yotiActivityDetails);
     context.log("3");
-    var user = getUser(req.params.userId);
+    var user = getUser(context, req.params.userId);
     if (user == null) { throw new Error("Failed to identify user"); }
     context.log(JSON.stringify(user));
     context.log("4");
