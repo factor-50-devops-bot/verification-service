@@ -92,13 +92,11 @@ const yotiIdMayBeUsed = function(rememberMeId) {
 };
 
 const getYotiDetails = function(activityDetails) {
-  if (activityDetails) {
-    const rememberMeId = activityDetails.getRememberMeId();
-    const profile = activityDetails.getProfile();
-    const dob = profile.getDateOfBirth().getValue();
-    const fullName = profile.getFullName().getValue();
-    return { name: fullName, dob: dob, rememberMeId: rememberMeId };
-  }
+  const rememberMeId = activityDetails.getRememberMeId();
+  const profile = activityDetails.getProfile();
+  const dob = profile.getDateOfBirth().getValue();
+  const fullName = profile.getFullName().getValue();
+  return { name: fullName, dob: dob, rememberMeId: rememberMeId };
 };
 
 const getUser = function(userId) {
@@ -120,16 +118,18 @@ module.exports = function(context, req) {
   var response = "";
   
   try {
-    var yotiActivityDetails = yotiClient.getActivityDetails(req.params.token);
-    var yotiResponse = getYotiDetails(yotiActivityDetails);
+    yotiClient.getActivityDetails(req.params.token).then((yotiActivityDetails) => {
+      if (yotiActivityDetails == null) { throw new Error("Failed to decrypt token"); }
+      var yotiResponse = getYotiDetails(yotiActivityDetails);
 
-    var user = getUser(req.params.userId);
+      var user = getUser(req.params.userId);
 
-    var verification = verify(user, yotiResponse);
-    var userServiceUpdated = updateUserModule(user.userId, verification.verified);
+      var verification = verify(user, yotiResponse);
+      var userServiceUpdated = updateUserModule(user.userId, verification.verified);
 
-    response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
-    statusCode = verification.verified && userServiceUpdated ? 200 : 401
+      response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
+      statusCode = verification.verified && userServiceUpdated ? 200 : 401;
+    });
   }
   catch (error) {
     context.log.error(error.name + ": " + error.message);
