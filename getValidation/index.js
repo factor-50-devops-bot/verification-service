@@ -133,6 +133,7 @@ module.exports = function(context, req) {
   }
   catch (error) {
     context.log.error(error.name + ": " + error.message);
+    response = JSON.stringify({error: error});
   }
   finally {
     context.res = {
