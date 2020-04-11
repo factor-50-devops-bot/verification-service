@@ -51,7 +51,7 @@ const verify = function(user, yotiResponse) {
 };
 
 const storeAuditLog = function(user, yotiResponse, verification, userServiceUpdated) {
-  const sumary = {
+  const summary = {
     timestamp: Date(),
     userId: user.id,
     rememberMeId: yotiResponse.rememberMeId,
@@ -59,9 +59,10 @@ const storeAuditLog = function(user, yotiResponse, verification, userServiceUpda
     verification: verification.detail,
     userServiceUpdated: userServiceUpdated
   };
-  //TODO: store this in Cosmos
   
-  return sumary;
+  await container.items.insert(summary);
+  
+  return summary;
 };
 
 const updateUserModule = function(userId, verified) {
