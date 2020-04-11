@@ -107,7 +107,7 @@ const getUser = async function(userId) {
       "x-functions-key": userServiceKey
     }
   });
-  return user.user;
+  return user;
 };
 
 
