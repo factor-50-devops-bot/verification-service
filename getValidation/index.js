@@ -117,28 +117,24 @@ module.exports = function(context, req) {
   var statusCode = 500;
   var response = "";
   
-  try {
-    context.log("1");
-    yotiClient.getActivityDetails(req.params.token).then((yotiActivityDetails) => {
-      context.log("2");
-      if (yotiActivityDetails == null) { throw new Error("Failed to decrypt token"); }
-      var yotiResponse = getYotiDetails(yotiActivityDetails);
-      context.log("3");
-      var user = getUser(req.params.userId);
-      context.log("4");
-      var verification = verify(user, yotiResponse);
-      var userServiceUpdated = updateUserModule(user.userId, verification.verified);
-      context.log("5");
-      response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
-      statusCode = verification.verified && userServiceUpdated ? 200 : 401;
-    });
-  }
-  catch (error) {
+  context.log("1");
+  yotiClient.getActivityDetails(req.params.token).then((yotiActivityDetails) => {
+    context.log("2");
+    if (yotiActivityDetails == null) { throw new Error("Failed to decrypt token"); }
+    var yotiResponse = getYotiDetails(yotiActivityDetails);
+    context.log("3");
+    var user = getUser(req.params.userId);
+    context.log("4");
+    var verification = verify(user, yotiResponse);
+    var userServiceUpdated = updateUserModule(user.userId, verification.verified);
+    context.log("5");
+    response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
+    statusCode = verification.verified && userServiceUpdated ? 200 : 401;
+  }).catch ((error) => {
     context.log("ERROR!!");
     context.log.error(error.name + ": " + error.message);
     response = JSON.stringify({error: error});
-  }
-  finally {
+  }).finally(() => {
     context.log("Finally");
     context.res = {
       status: statusCode,
@@ -148,5 +144,5 @@ module.exports = function(context, req) {
       }
     }
     context.done();
-  }
+  });
 };
