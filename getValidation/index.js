@@ -100,14 +100,15 @@ const getYotiDetails = function(activityDetails) {
 };
 
 const getUser = function(userId) {
-  const user = fetch(getUserServiceUrl + "?ID=" + userId, {
+  fetch(getUserServiceUrl + "?ID=" + userId, {
     method: "get",
     headers: {
       "content-type": "application/json",
       "x-functions-key": userServiceKey
     }
+  }).then((user) => {
+    return user.user;
   });
-  return user.user;
 };
 
 
