@@ -24,56 +24,47 @@ const getUserServiceUrl = process.env.GET_USER_SERVICE_URL;
 const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
 const userServiceKey = process.env.USER_SERVICE_KEY;
 
-// HelpMyStreet Constants//
-const ageLimit = 18; //current cutOff for age
-
-const getValidationData = function(context, yotiResponse, user) {
-  context.log("getValidationData");
-  var userDob = new Date(user.userPersonalDetails.dateOfBirth);
-  var yotiDob = new Date(yotiResponse.dob);
-  var dobMatch = // Check yoti has given us a user with matching dob
-    userDob.getDate() === yotiDob.getDate() &&
-    userDob.getMonth() === yotiDob.getMonth() &&
-    userDob.getFullYear() === yotiDob.getFullYear();
-  var ageMatch = getUserAgeIsAcceptable(userDob, ageLimit); // Check user is old enough
-
-  getRMIdNotAlreadyVerified(yotiResponse) // Check yotiId never used for successful validation before
-    .then(results => {
-      var userNotAlreadyVerified = results.resources.length < 1;
-      var verificationObject = {
-        dob: dobMatch,
-        age: ageMatch,
-        previousVerification: userNotAlreadyVerified
-      };
-      processValidation(user, context, yotiResponse, verificationObject);
-    })
-    .catch(function(error) {
-      context.log.error("Cosmos fetch error: %s: %s", error.name, error.message);
-      returnResponse(context, outputResponse, error);
-    });
+const datesMatch = function(date1, date2) {
+  return date1.getDate() === date2.getDate() && date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear();
 };
 
-const processValidation = function(user, context, yotiResponse, verificationObject) {
-  context.log("processValidation");
-  var verified =
-    verificationObject.dob &&
-    verificationObject.age &&
-    (verificationObject.previousVerification || disablePreviousAuthCheck);
-  const outputResponse = {
+const over18 = function(dateOfBirth) {
+  const dateOfAcceptability = new Date(
+    dateOfBirth.getFullYear() + 18,
+    dateOfBirth.getMonth(),
+    dateOfBirth.getDate()
+  );
+  const today = new Date();
+  return today >= dateOfAcceptability;
+};
+
+const verify = function(user, yotiResponse) {
+  var detail = {
+    dob: datesMatch(user.userPersonalDetails.dateOfBirth, yotiResponse.dob),
+    age: over18(user.userPersonalDetails.dateOfBirth),
+    previousVerification: yotiIdMayBeUsed(yotiResponse.rememberMeId)
+  };
+  return {
+    verified: detail.dob && detail.age && detail.previousVerification,
+    results: results
+  };
+};
+
+const storeAuditLog = function(user, yotiResponse, verification, userServiceUpdated) {
+  const sumary = {
     timestamp: Date(),
     userId: user.id,
     rememberMeId: yotiResponse.rememberMeId,
-    verified: verified,
-    verification: verificationObject
+    verified: verification.verified,
+    verification: verification.detail,
+    userServiceUpdated: userServiceUpdated
   };
-  // Save audit record
-  context.bindings.outputDocument = outputResponse;
-  // Notify user service
-  updateUserModule(user.id, context, verified);
+  //TODO: store this in Cosmos
+  
+  return sumary;
 };
 
-const updateUserModule = function(userId, context, verified) {
-  context.log("updateUserModule");
+const updateUserModule = function(userId, verified) {
   fetch(putUserServiceUrl, {
     method: "PUT",
     mode: "same-origin",
@@ -84,65 +75,23 @@ const updateUserModule = function(userId, context, verified) {
     },
     body: JSON.stringify({ UserId: userId, IsVerified: verified }) // Note updates verified status to true or false, null status indicates never attempted validation
   })
-    .then(response => {
-      response.json().then(json=>{
-        if (json.success) {
-            returnResponse(context, { userId: userId, verified: verified });
-        } else{
-            returnResponse(context, { userId: userId, verified: verified }, {error: "Could not update User"});
-        }
-      }
-      )
+  .then(response => {
+    response.json().then(json=>{
+      return json.success;
     })
-    .catch(function(error) {
-      context.log.error("User Module update verification error: %s: %s", error.name, error.message);
-      returnResponse(context, outputResponse, error);
-    });
+  });
 };
 
-const returnResponse = function(context, response, responseError) {
-  context.log("returnResponse");
-  // Generate HTTP response
-  var statusCode;
-  if (responseError) {
-    statusCode = 500;
-    context.log(responseError);
-  } else {
-    statusCode = response.verified ? 200 : 401;
+const yotiIdMayBeUsed = function(rememberMeId) {
+  if (disablePreviousAuthCheck) {
+    return true;
   }
-  context.res = {
-    status: statusCode,
-    body: response,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  };
-};
-
-const getUserAgeIsAcceptable = function(dateOfBirth, ageLimit) {
-  context.log("getUserAgeIsAcceptable");
-  const dateOfAcceptability = new Date(
-    dateOfBirth.getFullYear() + ageLimit,
-    dateOfBirth.getMonth(),
-    dateOfBirth.getDate()
-  );
-  const today = new Date();
-  return today >= dateOfAcceptability;
-};
-
-const getRMIdNotAlreadyVerified = function(yotiResponse) {
-  context.log("getRMIdNotAlreadyVerified");
-  var quotedYotiResponse = "'" + yotiResponse.rememberMeId + "'";
-  var query =
-    "SELECT * FROM c WHERE c.rememberMeId = " +
-    quotedYotiResponse +
-    " AND c.verified = true";
-
-  return container.items.query(query).fetchAll();
+  var query = "SELECT * FROM c WHERE c.rememberMeId = '" + rememberMeId + "' AND c.verified = true";
+  var existingUsers = container.items.query(query).fetchAll();
+  return existingUsers.resources.length == 0;
 };
 
 const getYotiDetails = function(activityDetails) {
-  context.log("getYotiDetails");
   if (activityDetails) {
     const rememberMeId = activityDetails.getRememberMeId();
     const profile = activityDetails.getProfile();
@@ -152,39 +101,47 @@ const getYotiDetails = function(activityDetails) {
   }
 };
 
-const getAllDetails = function(context, req, activityDetails) {
-  context.log("getAllDetails");
-  const yotiResponse = getYotiDetails(activityDetails);
-  const user = fetch(getUserServiceUrl + "?ID=" + req.params.userId, {
+const getUser = function(userId) {
+  const user = fetch(getUserServiceUrl + "?ID=" + userId, {
     method: "get",
     headers: {
       "content-type": "application/json",
       "x-functions-key": userServiceKey
     }
-  })
-    .then(response =>
-      response.json().then(user => {
-        var person = user.user;
-        getValidationData(context, yotiResponse, person);
-      })
-    )
-    .catch(function(error) {
-      context.log.error("User fetch error: %s: %s", error.name, error.message);
-      returnResponse(context, outputResponse, error);
-    });
+  });
+  return user.user;
 };
+
 
 module.exports = function(context, req) {
   context.log("Processing request for UserID: %d", req.params.userId);
-  context.res.status = 500;
-  yotiClient
-    .getActivityDetails(req.params.token)
-    .then(activityDetails => {
-      getAllDetails(context, req, activityDetails);
-    })
-    .catch(function(error) {
-      context.log.error("Yoti decode error: %s: %s", error.name, error.message);
-      returnResponse(context, outputResponse, error);
-    });
-  context.done();
+
+  var statusCode = 500;
+  var response = "";
+  
+  try {
+    var yotiActivityDetails = yotiClient.getActivityDetails(req.params.token);
+    var yotiResponse = getYotiDetails(yotiActivityDetails);
+
+    var user = getUser(req.params.userId);
+
+    var verification = verify(user, yotiResponse);
+    var userServiceUpdated = updateUserModule(user.userId, verification.verified);
+
+    response = storeAuditLog(user, yotiResponse, verification, userServiceUpdated);
+    statusCode = verification.verified && userServiceUpdated ? 200 : 401
+  }
+  catch (error) {
+    context.log.error(error.name + ": " + error.message);
+  }
+  finally {
+    context.res = {
+      status: statusCode,
+      body: response,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+    context.done();
+  }
 };
