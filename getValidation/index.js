@@ -99,13 +99,14 @@ const getYotiDetails = function(activityDetails) {
   return { name: fullName, dob: dob, rememberMeId: rememberMeId };
 };
 
-const getUser = fetch(getUserServiceUrl + "?ID=" + userId, {
+const getUser = new Promise((userId) => { fetch(getUserServiceUrl + "?ID=" + userId, {
     method: "get",
     headers: {
       "content-type": "application/json",
       "x-functions-key": userServiceKey
     }
   });
+});
 
 
 module.exports = function(context, req) {
