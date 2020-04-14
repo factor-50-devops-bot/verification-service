@@ -51,7 +51,7 @@ const getValidationData = function(context, yotiResponse, user) {
     }); 
 }; 
  
-const processValidation = function(user, context, yotiResponse, verificationObject) { 
+const processValidation = async function(user, context, yotiResponse, verificationObject) { 
   var verified = 
     verificationObject.dob && 
     verificationObject.age && 
