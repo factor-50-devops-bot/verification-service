@@ -51,7 +51,7 @@ const getValidationData = function(context, yotiResponse, user) {
     }); 
 }; 
  
-const processValidation = async function(user, context, yotiResponse, verificationObject) { 
+const processValidation = function(user, context, yotiResponse, verificationObject) { 
   var verified = 
     verificationObject.dob && 
     verificationObject.age && 
@@ -64,7 +64,6 @@ const processValidation = async function(user, context, yotiResponse, verificati
     verification: verificationObject 
   }; 
   // Save audit record 
-  await container.items.insert(outputResponse);
   context.bindings.outputDocument = outputResponse; 
   // Notify user service 
   updateUserModule(user.id, context, verified); 
