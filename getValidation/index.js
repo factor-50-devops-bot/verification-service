@@ -64,6 +64,7 @@ const processValidation = function(user, context, yotiResponse, verificationObje
     verification: verificationObject 
   }; 
   // Save audit record 
+  await container.items.insert(outputResponse);
   context.bindings.outputDocument = outputResponse; 
   // Notify user service 
   updateUserModule(user.id, context, verified); 
