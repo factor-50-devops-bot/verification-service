@@ -40,13 +40,29 @@ module.exports = function(context, req) {
   var results = [];
 
   // Then run container.items.query to extract promises and resolve promises as array of {query.name, datum.resources[0]}
-  queries.map(query =>
-    results.push(container.items.query(query.string).fetchAll())
-  );
+  queries.map(query => {
+    results.push(
+      new Promise((resolve, reject) => {
+        container.items
+          .query(query.string)
+          .fetchAll()
+          .then(result =>
+            resolve({ name: query.name, result: result.resources[0] })
+          )
+          .catch(err => reject(err));
+      })
+    );
+  });
 
   Promise.all(results)
     .then(data => {
-      data.map(datum => context.log(datum.resources[0]));
+      context.res = {
+        status: 200,
+        body: data,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      };
       context.done();
     })
     .catch(err => {
