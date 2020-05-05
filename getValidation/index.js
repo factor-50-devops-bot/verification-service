@@ -193,27 +193,27 @@ module.exports = function (context, req) {
   var logOutput = "";
   Promise.all([yotiPromise, userPromise])
     .then((values) => {
-      logOutput += "Post-Values ";
+      logOutput = "Post-Values" ;
       context.log(logOutput);
       return processDetails(values[0], values[1]);
     })
     .then((details) => {
-      logOutput += "Post-Details ";
+      logOutput = "Post-Details ";
       context.log(logOutput);
       return verify(details.yoti, details.user);
     })
     .then((data) => {
-      logOutput += "Post-verification ";
+      logOutput = "Post-verification ";
       context.log(logOutput);
       return updateUserModule(data);
     })
     .then((response) => {
-      logOutput += "Post-User Update ";
+      logOutput = "Post-User Update ";
       context.log(logOutput);
       return completeVerification(context, response);
     })
     .catch((error) => {
-      context.log(logOutput + error);
+      context.log("Error: " + error + " After " + logOutput);
       completeVerification(context, null, {responseText: logOutput, errorData: error});
     });
 };
