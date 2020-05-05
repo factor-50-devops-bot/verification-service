@@ -50,21 +50,20 @@ const isOldEnough = function (dateOfBirth, ageLimit) {
   return today >= dateOfAcceptability;
 };
 
-const isNotAlreadyVerified = function (rememberMeId) {
-  var quotedId = "'" + rememberMeId + "'";
+const getPreviousVerifications = function (rememberMeId, userId) {
   var query =
-    "SELECT * FROM c WHERE c.rememberMeId = " +
-    quotedId +
-    " AND c.verified = true";
+    `SELECT * FROM c WHERE c.rememberMeId = '${rememberMeId}'` +
+    ` AND c.verified = true` +
+    ` AND c.userID != ${userId}`;
 
   return container.items.query(query).fetchAll();
 };
 
-const getVerificationData = async function (yotiResponse, user) {
+const verify = async function (yotiResponse, user) {
   var userDob = new Date(user.userPersonalDetails.dateOfBirth);
   var yotiDob = new Date(yotiResponse.dob);
-  var previousVerifications = await isNotAlreadyVerified(
-    yotiResponse.rememberMeId
+  var previousVerifications = await getPreviousVerifications(
+    yotiResponse.rememberMeId, user.id
   );
 
   var dobMatch = compareAge(userDob, yotiDob); // Check yoti has given us a user with matching dob
@@ -142,6 +141,8 @@ const getYotiDetails = function (activityDetails) {
     const dob = profile.getDateOfBirth().getValue();
     const fullName = profile.getFullName().getValue();
     return { name: fullName, dob: dob, rememberMeId: rememberMeId };
+  } else {
+    throw 'No activity details in yoti response';
   }
 };
 
@@ -193,18 +194,22 @@ module.exports = function (context, req) {
   Promise.all([yotiPromise, userPromise])
     .then((values) => {
       logOutput += "Post-Values ";
+      context.log(logOutput);
       return processDetails(values[0], values[1]);
     })
     .then((details) => {
       logOutput += "Post-Details ";
-      return getVerificationData(details.yoti, details.user);
+      context.log(logOutput);
+      return verify(details.yoti, details.user);
     })
     .then((data) => {
       logOutput += "Post-verification ";
+      context.log(logOutput);
       return updateUserModule(data);
     })
     .then((response) => {
       logOutput += "Post-User Update ";
+      context.log(logOutput);
       return completeVerification(context, response);
     })
     .catch((error) => {
