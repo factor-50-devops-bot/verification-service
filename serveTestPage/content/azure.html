@@ -1,0 +1,16 @@
+<head>
+    <script src="https://www.yoti.com/share/client/"></script>
+  </head>
+  
+  <body>
+    <label for="dob">Date Of Birth</label>
+    <input type="date" id="dob" name="dob"><br><br>
+    <button onclick="goToPage()">Continue registration</button>
+  
+    <!-- This script snippet will also be required in your HTML body -->
+    <script>
+    function goToPage(){
+        window.location.href = 'https://helpmystreet-verification-service-next-major-release.azurewebsites.net/api/mobileTestPage?dob=' + document.getElementById('dob').value;
+    };
+    </script>
+  </body>
