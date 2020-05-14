@@ -5,35 +5,57 @@
 
 trigger:
 - master
+- next-major-release
 
 pool:
   vmImage: 'windows-latest'
 
 steps:
 - task: NodeTool@0
+  displayName: 'Install Node.js'
   inputs:
     versionSpec: '10.x'
-  displayName: 'Install Node.js'
+
+- task: DotNetCoreCLI@2
+  displayName: DotNetCore build
+  inputs:
+    command: 'build'
+    projects: '*.csproj'
 
 - task: Npm@1
+  displayName: npm install azure functions core tools
+  inputs:
+    command: 'custom'
+    customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
+
+- task: Npm@1
+  displayName: npm install
   inputs:
     command: 'install'
 
+- task: CmdLine@2
+  displayName: func extensions install
+  inputs:
+    script: 'func extensions install'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
 - task: Npm@1
+  displayName: npm run build
   inputs:
     command: 'custom'
     customCommand: 'run build --production'
-  
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: 'build/*'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
 
-- task: AzureFunctionApp@1
+- task: ArchiveFiles@2
+  displayName: Archive files
   inputs:
-    azureSubscription: 'Azure subscription 1(1)(cf4b5ad9-1aa8-4960-af9c-01030b3a2662)'
-    appType: 'functionApp'
-    appName: 'helpmystreet-verification-service-dev'
-    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
-    deploymentMethod: 'auto'
+    rootFolderOrFile: '$(build.sourcesdirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/output.zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish build artefacts
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/output.zip' 
+    artifactName: 'drop'

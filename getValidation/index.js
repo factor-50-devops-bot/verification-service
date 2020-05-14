@@ -1,124 +1,219 @@
 // Requires //
-const fs = require('fs');
 const yoti = require("yoti");
-const cosmos = require('@azure/cosmos');
+const cosmos = require("@azure/cosmos");
+const fetch = require("node-fetch");
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
-const PEM_PATH = __dirname + "//resources//security.pem";
-const PEM_KEY = fs.readFileSync(PEM_PATH);
+const PEM_KEY = process.env["yoti-pem"].replace(/\\n/gm, "\n");
 const yotiClient = new yoti.Client(CLIENT_SDK_ID, PEM_KEY);
 
 // Database connection //
 const endpoint = process.env.COSMOS_API_URL;
 const masterKey = process.env.COSMOS_API_KEY;
 const { CosmosClient } = cosmos;
-const client = new CosmosClient({ endpoint, auth: { masterKey } });
-const container = client.database("verificationDB").container("verification-attempts");
+const client = new CosmosClient({ endpoint: endpoint, key: masterKey });
+const container = client
+  .database("verificationDB")
+  .container("verification-attempts");
 
 // Other module connections //
-const userServiceUrl = process.env.USER_SERVICE_URL;
+const getUserServiceUrl = process.env.GET_USER_SERVICE_URL;
+const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
+const userServiceKey = process.env.USER_SERVICE_KEY;
 
 // HelpMyStreet Constants//
 const ageLimit = 18; //current cutOff for age
+const numberOfYotis = process.env["yoti-number-of-attempts"]; // Number of allowable Yotis
 
-const getValidationData = function (context, yotiResponse, user) {
-    var dobMatch = (user.dob === yotiResponse.dob); // Check yoti has given us a user with matching dob
-    var ageMatch = getUserAgeIsAcceptable(user.dob, ageLimit); // Check user is old enough
-    getRMIdNotAlreadyVerified(yotiResponse) // Check yotiId never used for successful validation before
-        .then(userNotAlreadyVerified => {
-            var verified = (dobMatch && ageMatch && userNotAlreadyVerified);
-            processValidation(user, context, yotiResponse, verified);
-        }).catch(err => {context.log("error in getting cosmos data")});
-}
+// Debug Settings //
+const respondWithError = true;
+const errorCosmos = true;
+const disablePreviousAuthCheck =
+  process.env["yoti-previous-auth"] === "true" ? true : false;
 
-const processValidation = function (user, context, yotiResponse, verified) {
-    const outputResponse = { timestamp: Date(), userId: user.userId, rememberMeId: user.rememberMeId, verified: verified, payload: yotiResponse };
+const compareAge = function (age1, age2) {
+  return (
+    age1.getDate() === age2.getDate() &&
+    age1.getMonth() === age2.getMonth() &&
+    age1.getFullYear() === age2.getFullYear()
+  );
+};
 
-    // Save audit record
-    context.bindings.outputDocument = outputResponse;
-    // Notify user service
-    updateUserModule(user.userId, context, verified);
-}
+const isOldEnough = function (dateOfBirth, ageLimit) {
+  const dateOfAcceptability = new Date(
+    dateOfBirth.getFullYear() + ageLimit,
+    dateOfBirth.getMonth(),
+    dateOfBirth.getDate()
+  );
+  const today = new Date();
+  return today >= dateOfAcceptability;
+};
 
-const updateUserModule = function (userId, context, verified) {
-    fetch(userServiceUrl + "/setValidation/", {
-        method: 'post',
-        headers: {
-            "Content-type": "application/json"
-        },
-        body: { userId: userId, verified: verified } // Note updates verified status to true or false, null status indicates never attempted validation
-    })
-        .then(() => {
-             returnResponse(context, {userId: userId, verified: verified})
-        })
-        .catch(function (error) {
-            console.log('User Module error: ', error);
-            returnResponse(context, outputResponse, error);
-        });
-}
+const getPreviousVerifications = function (rememberMeId, userId) {
+  var query =
+    `SELECT * FROM c WHERE c.rememberMeId = '${rememberMeId}'` +
+    ` AND c.verified = true` +
+    ` AND c.userID != ${userId}`;
 
-const returnResponse = function (context, response, responseError){
-        // Generate HTTP response
-    var statusCode;
-    if (responseError) {
-        statusCode = 500;
-    } else {
-        statusCode = response.verified ? 200 : 401
-    }
-    context.res = {
-        status: statusCode,
-        body: {message: "VerService Complete"},
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    };
-    context.done();
-}
+  return container.items.query(query).fetchAll();
+};
 
-const getUserAgeIsAcceptable = function (dob, ageLimit) {
-    const dateOfBirth = new Date(dob);
-    const dateOfAcceptability = new Date(dateOfBirth.getFullYear() + ageLimit, dateOfBirth.getMonth(), dateOfBirth.getDate());
-    const today = new Date();
-    return (today >= dateOfAcceptability);
-}
+const verify = async function (yotiResponse, user) {
+  var userDob = new Date(user.userPersonalDetails.dateOfBirth);
+  var yotiDob = new Date(yotiResponse.dob);
+  var previousVerifications = await getPreviousVerifications(
+    yotiResponse.rememberMeId, user.id
+  );
 
-const getRMIdNotAlreadyVerified = async function (yotiResponse) {
-    const querySpec = {
-        query: "SELECT * FROM c WHERE c.rememberMeId = @rmid AND verified = true",
-        parameters: [
-            {
-                name: "@rmid",
-                value: yotiResponse.rememberMeId
-            }
-        ]
-    };
+  var dobMatch = compareAge(userDob, yotiDob); // Check yoti has given us a user with matching dob
+  var ageMatch = isOldEnough(userDob, ageLimit); // Check user is old enough
+  var notPreviouslyVerified = previousVerifications.resources.length < numberOfYotis; // Check yotiId not used for too many successful verifications before
 
-    const { result: results } = await container.items.query(querySpec).toArray();
+  var verified =
+    dobMatch && ageMatch && (notPreviouslyVerified || disablePreviousAuthCheck);
 
-    return (results.length < 1);
-}
+  return {
+    datestamp: new Date().toISOString(),
+    userId: user.id,
+    rememberMeId: yotiResponse.rememberMeId,
+    verified: verified,
+    verificationDetails: {
+      dobMatch: dobMatch,
+      ageMatch: ageMatch,
+      notPreviouslyVerified: notPreviouslyVerified,
+    },
+    isError: false
+  };
+};
+
+const updateUserModule = async function (verificationAttempt) {
+  var result = await fetch(putUserServiceUrl, {
+    method: "PUT",
+    mode: "same-origin",
+    headers: {
+      "Content-type": "application/json",
+      "x-functions-key": userServiceKey,
+      "cache-control": "no-cache",
+    },
+    body: JSON.stringify({
+      UserId: verificationAttempt.userId,
+      IsVerified: verificationAttempt.verified,
+    }), // Note updates verified status to true or false, null status indicates never attempted verification
+  });
+  var resultJSON = await result.json();
+
+  var thisVerificationAttempt = verificationAttempt;
+  thisVerificationAttempt.userUpdated = resultJSON.success;
+  thisVerificationAttempt.verified = thisVerificationAttempt.verified && thisVerificationAttempt.userUpdated
+  return thisVerificationAttempt;
+};
+
+const returnResponse = function (context, response, responseError) {
+  // Generate HTTP response
+  var statusCode;
+  if (responseError) {
+    statusCode = 500;
+  } else {
+    statusCode = response.verified ? 200 : 401;
+  }
+
+  var responseBody;
+  if (responseError) {
+    responseBody = respondWithError ? responseError : null;
+  } else {
+    responseBody = response;
+  }
+
+  context.res = {
+    status: statusCode,
+    body: responseBody,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+};
 
 const getYotiDetails = function (activityDetails) {
+  if (activityDetails) {
+    const rememberMeId = activityDetails.getRememberMeId();
+    const profile = activityDetails.getProfile();
+    const dob = profile.getDateOfBirth().getValue();
+    const fullName = profile.getFullName().getValue();
+    return { name: fullName, dob: dob, rememberMeId: rememberMeId };
+  } else {
+    throw 'No activity details in yoti response';
+  }
+};
 
-    if (activityDetails) {
-        const rememberMeId = activityDetails.getRememberMeId();
-        const profile = activityDetails.getProfile();
-        const dob = profile.getDateOfBirth().getValue();
-        const fullName = profile.getFullName().getValue();
-        return { name: fullName, dob: dob, rememberMeId: rememberMeId }
-    }
-}
+const getYoti = function (token) {
+  return yotiClient.getActivityDetails(token);
+};
 
-const getAllDetails = function (context, req, activityDetails) {
+const getUser = async function (userId) {
+  var response = await fetch(getUserServiceUrl + "?ID=" + userId, {
+    method: "get",
+    headers: {
+      "content-type": "application/json",
+      "x-functions-key": userServiceKey,
+    },
+  });
 
-    const yotiResponse = getYotiDetails(activityDetails);
-    const user = fetch(userServiceUrl + "/getUserById?userId=" + req.userId)
-        .then(response => response.json()
-            .then(user = getValidationData(context, yotiResponse, user)))
-        .catch(err => context.log("User fetch error:" + err));
-}
+  return response.json();
+};
+
+const processDetails = function (yoti, user) {
+  const yotiResponse = getYotiDetails(yoti);
+  const userResponse = user.user;
+  return { yoti: yotiResponse, user: userResponse };
+};
+
+const completeVerification = function (context, response, responseError) {
+  // Save to Cosmos
+  if (responseError) {
+    context.bindings.outputDocument = {
+      datestamp: new Date().toISOString(),
+      isError: true,
+      error: errorCosmos ? responseError : "An error occurred, but security settings prevented database logging",
+    };
+  } else {
+    context.bindings.outputDocument = response;
+  }
+
+  // Respond to client
+  returnResponse(context, response, responseError);
+
+  // Context Finishes
+  context.done();
+};
 
 module.exports = function (context, req) {
-    yotiClient.getActivityDetails(req.token).then((activityDetails) => { getAllDetails(context, req, activityDetails) });
-}
+  const yotiPromise = getYoti(req.params.token);
+  const userPromise = getUser(req.params.userId);
+  var logOutput = "";
+  Promise.all([yotiPromise, userPromise])
+    .then((values) => {
+      logOutput = "Post-Values" ;
+      context.log(logOutput);
+      return processDetails(values[0], values[1]);
+    })
+    .then((details) => {
+      logOutput = "Post-Details ";
+      context.log(logOutput);
+      return verify(details.yoti, details.user);
+    })
+    .then((data) => {
+      logOutput = "Post-verification ";
+      context.log(logOutput);
+      return updateUserModule(data);
+    })
+    .then((response) => {
+      logOutput = "Post-User Update ";
+      context.log(logOutput);
+      return completeVerification(context, response);
+    })
+    .catch((error) => {
+      context.log("Error: " + error + " After " + logOutput);
+      completeVerification(context, null, {responseText: logOutput, errorData: error});
+    });
+};
