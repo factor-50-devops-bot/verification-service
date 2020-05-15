@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "schedule": "*/5   *   *   *   *",
+      "name": "timedHealthCheck",
+      "type": "timerTrigger",
+      "direction": "in"
+  }
+  ]
+}
