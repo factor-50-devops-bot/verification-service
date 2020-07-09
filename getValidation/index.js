@@ -79,6 +79,7 @@ const verify = async function (yotiResponse, user) {
     rememberMeId: yotiResponse.rememberMeId,
     verified: verified,
     verificationDetails: {
+      verificationMethod: "Yoti",
       dobMatch: dobMatch,
       ageMatch: ageMatch,
       notPreviouslyVerified: notPreviouslyVerified,
@@ -101,12 +102,18 @@ const updateUserModule = async function (verificationAttempt) {
       IsVerified: verificationAttempt.verified,
     }), // Note updates verified status to true or false, null status indicates never attempted verification
   });
+  if (result.status === 200){
   var resultJSON = await result.json();
 
   var thisVerificationAttempt = verificationAttempt;
   thisVerificationAttempt.userUpdated = resultJSON.success;
   thisVerificationAttempt.verified = thisVerificationAttempt.verified && thisVerificationAttempt.userUpdated
   return thisVerificationAttempt;
+  }else if (response.status === 401) {
+    throw 'User Service Unauthorised: Is key valid?'
+  } else {
+    throw 'User Service error'
+  }
 };
 
 const returnResponse = function (context, response, responseError) {
@@ -158,8 +165,15 @@ const getUser = async function (userId) {
       "x-functions-key": userServiceKey,
     },
   });
-
+  if (response.status === 200)
+  {
   return response.json();
+  }
+  else if (response.status === 401) {
+    throw 'User Service Unauthorised: Is key valid?'
+  } else {
+    throw 'User Service error'
+  }
 };
 
 const processDetails = function (yoti, user) {
@@ -188,6 +202,7 @@ const completeVerification = function (context, response, responseError) {
 };
 
 module.exports = function (context, req) {
+  
   const yotiPromise = getYoti(req.params.token);
   const userPromise = getUser(req.params.userId);
   var logOutput = "";

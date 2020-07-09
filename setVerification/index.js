@@ -43,7 +43,8 @@ const updateCosmos = function(context, userId, userError, verificationDetails){
         userId: userId,
         verified: true,
         verificationDetails: verificationDetails,
-        isError: userError
+        isError: userError,
+        userUpdated: userError ? false : true
     }
     context.bindings.outputDocument = response;
 }
