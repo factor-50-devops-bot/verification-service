@@ -1,17 +1,6 @@
 const fetch = require('node-fetch');
 const cosmos = require("@azure/cosmos");
 import {updateUserService} from "./shared/common.js";
-const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
-const userServiceKey = process.env.USER_SERVICE_KEY;
-
-// Database connection //
-const endpoint = process.env.COSMOS_API_URL;
-const masterKey = process.env.COSMOS_API_KEY;
-const { CosmosClient } = cosmos;
-const client = new CosmosClient({ endpoint: endpoint, key: masterKey });
-const container = client
-  .database("verificationDB")
-  .container("verification-attempts");
 
 const updateCosmos = function(context, userId, userUpdated, userError, verificationDetails){
     const response = {
