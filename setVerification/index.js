@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const cosmos = require("@azure/cosmos");
-import {updateUserService} from "./shared/common.js";
+import {updateUserService} from "../shared/common.js";
 
 const updateCosmos = function(context, userId, userUpdated, userError, verificationDetails){
     const response = {

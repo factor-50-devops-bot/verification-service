@@ -2,7 +2,7 @@
 const yoti = require("yoti");
 const cosmos = require("@azure/cosmos");
 const fetch = require("node-fetch");
-import {updateUserService} from './shared/common.js'
+import {updateUserService} from '../shared/common.js'
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
