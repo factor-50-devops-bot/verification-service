@@ -2,6 +2,7 @@
 const yoti = require("yoti");
 const cosmos = require("@azure/cosmos");
 const fetch = require("node-fetch");
+import {updateUserService} from './shared/common.js'
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
@@ -86,34 +87,6 @@ const verify = async function (yotiResponse, user) {
     },
     isError: false
   };
-};
-
-const updateUserModule = async function (verificationAttempt) {
-  var result = await fetch(putUserServiceUrl, {
-    method: "PUT",
-    mode: "same-origin",
-    headers: {
-      "Content-type": "application/json",
-      "x-functions-key": userServiceKey,
-      "cache-control": "no-cache",
-    },
-    body: JSON.stringify({
-      UserId: verificationAttempt.userId,
-      IsVerified: verificationAttempt.verified,
-    }), // Note updates verified status to true or false, null status indicates never attempted verification
-  });
-  if (result.status === 200){
-  var resultJSON = await result.json();
-
-  var thisVerificationAttempt = verificationAttempt;
-  thisVerificationAttempt.userUpdated = resultJSON.success;
-  thisVerificationAttempt.verified = thisVerificationAttempt.verified && thisVerificationAttempt.userUpdated
-  return thisVerificationAttempt;
-  }else if (response.status === 401) {
-    throw 'User Service Unauthorised: Is key valid?'
-  } else {
-    throw 'User Service error'
-  }
 };
 
 const returnResponse = function (context, response, responseError) {
@@ -220,12 +193,14 @@ module.exports = function (context, req) {
     .then((data) => {
       logOutput = "Post-verification ";
       context.log(logOutput);
-      return updateUserModule(data);
+      return updateUserService(data.userId, data.verified);
     })
     .then((response) => {
+      data.userUpdated = response;
+      data.verified = data.verified && response;
       logOutput = "Post-User Update ";
       context.log(logOutput);
-      return completeVerification(context, response);
+      return completeVerification(context, data);
     })
     .catch((error) => {
       context.log("Error: " + error + " After " + logOutput);

@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const cosmos = require("@azure/cosmos");
-
+import {updateUserService} from "./shared/common.js";
 const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
 const userServiceKey = process.env.USER_SERVICE_KEY;
 
@@ -13,38 +13,15 @@ const container = client
   .database("verificationDB")
   .container("verification-attempts");
 
-const updateUserService = async function(userId){
-    var result = await fetch(putUserServiceUrl, {
-        method: "PUT",
-        mode: "same-origin",
-        headers: {
-          "Content-type": "application/json",
-          "x-functions-key": userServiceKey,
-          "cache-control": "no-cache",
-        },
-        body: JSON.stringify({
-          UserId: verificationAttempt.userId,
-          IsVerified: true,
-        }),
-      });
-      if (result.status === 200){
-      var resultJSON = await result.json();
-      return resultJSON.success; 
-      }else if (result.status === 401){
-          throw 'User Service Unauthorised: Is key valid?'
-      } else {
-          throw 'User Service Error'
-      }
-}
-
-const updateCosmos = function(context, userId, userError, verificationDetails){
+const updateCosmos = function(context, userId, userUpdated, userError, verificationDetails){
     const response = {
         datestamp: new Date().toISOString(),
         userId: userId,
         verified: true,
         verificationDetails: verificationDetails,
-        isError: userError,
-        userUpdated: userError ? false : true
+        isError: userError ? true: false,
+        error: userError,
+        userUpdated: userUpdated
     }
     context.bindings.outputDocument = response;
 }
@@ -56,13 +33,13 @@ module.exports = async function (context, req) {
     var userError;
 
     try{
-    const userUpdated = await updateUserService(userId);
+    const userUpdated = await updateUserService(userId, true);
     }
     catch(err){
         userError = err;
     }
 
-    updateCosmos(context, userId, userError, verificationDetails);
+    updateCosmos(context, userId, userUpdated, userError, verificationDetails);
 
     context.res = {
         status: error ? 500 : 200,
