@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@azure/cosmos": "^3.6.2",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "yoti": "^3.9.0"
   },
   "devDependencies": {
