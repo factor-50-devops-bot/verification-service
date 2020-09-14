@@ -1,7 +1,7 @@
 const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
 const userServiceKey = process.env.USER_SERVICE_KEY;
 
-export async function updateUserService(userId, isVerified){
+exports.updateUserService =  async function (userId, isVerified){
     var result = await fetch(putUserServiceUrl, {
         method: "PUT",
         mode: "same-origin",
