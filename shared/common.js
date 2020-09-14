@@ -15,10 +15,11 @@ export async function updateUserService(userId, isVerified){
           IsVerified: isVerified,
         }),
       });
-      if (result.status === 200){
-      var resultJSON = await result.json();
-      return resultJSON.success; 
-      }else if (result.status === 401){
+      var json = await response.json;
+      if (json.hasContent === true && json.isSuccessful === true){
+        return json.content.success;
+      }
+      else if (response.status === 401) {
           throw 'User Service Unauthorised: Is key valid?'
       } else {
           throw 'User Service Error'
