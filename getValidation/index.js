@@ -138,9 +138,10 @@ const getUser = async function (userId) {
       "x-functions-key": userServiceKey,
     },
   });
-  if (response.hasContent === true && response.isSuccessful==true)
+  var json = await response.json;
+  if (json.hasContent === true && json.isSuccessful === true)
   {
-  return response.content.json();
+  return json.content;
   }
   else if (response.status === 401) {
     throw 'User Service Unauthorised: Is key valid?'
