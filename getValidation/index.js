@@ -2,7 +2,7 @@
 const yoti = require("yoti");
 const cosmos = require("@azure/cosmos");
 const fetch = require("node-fetch");
-import {updateUserService} from '../shared/common.js'
+const common = require('../shared/common.js')
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
@@ -194,7 +194,7 @@ module.exports = function (context, req) {
     .then((data) => {
       logOutput = "Post-verification ";
       context.log(logOutput);
-      return updateUserService(data.userId, data.verified);
+      return common.updateUserService(data.userId, data.verified);
     })
     .then((response) => {
       data.userUpdated = response;
