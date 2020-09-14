@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const cosmos = require("@azure/cosmos");
-import {updateUserService} from "../shared/common.js";
+const common = require("../shared/common.js");
 
 const updateCosmos = function(context, userId, userUpdated, userError, verificationDetails){
     const response = {
@@ -22,7 +22,7 @@ module.exports = async function (context, req) {
     var userError;
 
     try{
-    const userUpdated = await updateUserService(userId, true);
+    const userUpdated = await common.updateUserService(userId, true);
     }
     catch(err){
         userError = err;
