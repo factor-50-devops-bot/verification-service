@@ -1,5 +1,6 @@
 const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
 const userServiceKey = process.env.USER_SERVICE_KEY;
+const fetch = require("node-fetch");
 
 exports.updateUserService =  async function (userId, isVerified){
     var result = await fetch(putUserServiceUrl, {
