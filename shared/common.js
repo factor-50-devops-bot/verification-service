@@ -15,13 +15,17 @@ exports.updateUserService =  async function (userId, isVerified){
           IsVerified: isVerified,
         }),
       });
-      var json = await response.json;
-      if (json.hasContent === true && json.isSuccessful === true){
+      if (response.status === 200){
+      var json = await response.json();
+      if (json.hasContent && json.isSuccessful){
         return json.content.success;
+      } else {
+        throw 'User Service Put - Cannot unwrap JSON'
+      }
       }
       else if (response.status === 401) {
           throw 'User Service Put Unauthorised: Is key valid? ' + userServiceKey
       } else {
-          throw 'User Service Error'
+          throw 'User Service Put Error'
       }
 }
