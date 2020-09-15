@@ -20,7 +20,7 @@ exports.updateUserService =  async function (userId, isVerified){
         return json.content.success;
       }
       else if (response.status === 401) {
-          throw 'User Service Unauthorised: Is key valid?'
+          throw 'User Service Put Unauthorised: Is key valid? ' + userServiceKey
       } else {
           throw 'User Service Error'
       }
