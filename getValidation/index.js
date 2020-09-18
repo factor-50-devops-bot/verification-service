@@ -195,12 +195,12 @@ module.exports = function (context, req) {
       context.log(logOutput);
       return verify(details.yoti, details.user);
     })
-    .then((data) => {
+    .then(async (data) => {
       logOutput = "Post-verification ";
       context.log(logOutput);
-      return common.updateUserService(data.userId, data.verified);
-    })
-    .then((response) => {
+      var response =  await common.updateUserService(data.userId, data.verified);
+    //})
+    //.then((response) => {
       data.userUpdated = response;
       data.verified = data.verified && response;
       logOutput = "Post-User Update ";
