@@ -2,6 +2,7 @@
 const yoti = require("yoti");
 const cosmos = require("@azure/cosmos");
 const fetch = require("node-fetch");
+const common = require('../shared/common.js')
 
 // Yoti connection //
 const CLIENT_SDK_ID = process.env["yoti_api_key"];
@@ -79,34 +80,13 @@ const verify = async function (yotiResponse, user) {
     rememberMeId: yotiResponse.rememberMeId,
     verified: verified,
     verificationDetails: {
+      verificationMethod: "Yoti",
       dobMatch: dobMatch,
       ageMatch: ageMatch,
       notPreviouslyVerified: notPreviouslyVerified,
     },
     isError: false
   };
-};
-
-const updateUserModule = async function (verificationAttempt) {
-  var result = await fetch(putUserServiceUrl, {
-    method: "PUT",
-    mode: "same-origin",
-    headers: {
-      "Content-type": "application/json",
-      "x-functions-key": userServiceKey,
-      "cache-control": "no-cache",
-    },
-    body: JSON.stringify({
-      UserId: verificationAttempt.userId,
-      IsVerified: verificationAttempt.verified,
-    }), // Note updates verified status to true or false, null status indicates never attempted verification
-  });
-  var resultJSON = await result.json();
-
-  var thisVerificationAttempt = verificationAttempt;
-  thisVerificationAttempt.userUpdated = resultJSON.success;
-  thisVerificationAttempt.verified = thisVerificationAttempt.verified && thisVerificationAttempt.userUpdated
-  return thisVerificationAttempt;
 };
 
 const returnResponse = function (context, response, responseError) {
@@ -158,8 +138,20 @@ const getUser = async function (userId) {
       "x-functions-key": userServiceKey,
     },
   });
-
-  return response.json();
+  if (response.status === 200){
+    var json = await response.json();
+    if (json.hasContent && json.isSuccessful)
+    {
+    return json.content;
+    } else {
+    throw 'User Service JSON unsuccessful'
+    }
+  }
+  else if (response.status === 401) {
+    throw 'User Service Unauthorised: Is key valid?'
+  } else {
+    throw 'User Service error'
+  }
 };
 
 const processDetails = function (yoti, user) {
@@ -188,6 +180,7 @@ const completeVerification = function (context, response, responseError) {
 };
 
 module.exports = function (context, req) {
+  
   const yotiPromise = getYoti(req.params.token);
   const userPromise = getUser(req.params.userId);
   var logOutput = "";
@@ -202,15 +195,15 @@ module.exports = function (context, req) {
       context.log(logOutput);
       return verify(details.yoti, details.user);
     })
-    .then((data) => {
+    .then(async (data) => {
       logOutput = "Post-verification ";
       context.log(logOutput);
-      return updateUserModule(data);
-    })
-    .then((response) => {
+      var userServiceUpdated = await common.updateUserService(data.userId, data.verified);
+      data.userUpdated = userServiceUpdated;
+      data.verified = data.verified && userServiceUpdated;
       logOutput = "Post-User Update ";
       context.log(logOutput);
-      return completeVerification(context, response);
+      return completeVerification(context, data);
     })
     .catch((error) => {
       context.log("Error: " + error + " After " + logOutput);
