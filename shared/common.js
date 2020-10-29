@@ -1,19 +1,20 @@
-const putUserServiceUrl = process.env.PUT_USER_SERVICE_URL;
-const userServiceKey = process.env.USER_SERVICE_KEY;
+const groupServiceUrl = process.env.GROUP_SERVICE_URL;
+const groupServiceKey = process.env.GROUP_SERVICE_KEY;
 const fetch = require("node-fetch");
+const yotiUpdateApi = "/api/PutYotiVerifiedUser"
 
-exports.updateUserService =  async function (userId, isVerified){
-    var response = await fetch(putUserServiceUrl, {
+exports.updateUserService =  async function (userId, yotiId){
+    var response = await fetch(`${groupServiceUrl}${yotiUpdateApi}?code=${groupServiceKey}`, {
         method: "PUT",
         mode: "same-origin",
         headers: {
           "Content-type": "application/json",
-          "x-functions-key": userServiceKey,
-          "cache-control": "no-cache",
+          "cache-control": "no-cache"
         },
         body: JSON.stringify({
-          UserId: userId,
-          IsVerified: isVerified,
+          userId: userId,
+          reference: yotiId,
+          notes: ""
         }),
       });
       if (response.status === 200){
