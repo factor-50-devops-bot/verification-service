@@ -22,7 +22,7 @@ module.exports = async function (context, req) {
     var userError;
 
     try{
-    const userUpdated = await common.updateUserService(userId, "Manual Update");
+    const userUpdated = await common.updateUserService(context, userId, "Manual Update");
     }
     catch(err){
         userError = err;
