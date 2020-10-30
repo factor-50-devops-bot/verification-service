@@ -25,7 +25,7 @@ exports.updateUserService =  async function (context, userId, yotiId){
       var json = await response.json();
       context.log(json);
       if (json.hasContent && json.isSuccessful){
-        return json.content.success;
+        return json.content;
       } else {
         throw 'User Service Put - Cannot unwrap JSON'
       }
