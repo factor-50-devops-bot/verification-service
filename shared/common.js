@@ -3,7 +3,10 @@ const groupServiceKey = process.env.GROUP_SERVICE_KEY;
 const fetch = require("node-fetch");
 const yotiUpdateApi = "/api/PutYotiVerifiedUser"
 
-exports.updateUserService =  async function (userId, yotiId){
+exports.updateUserService =  async function (context, userId, yotiId){
+    context.log(userId);
+    context.log(yotiId);
+    context.log(`${groupServiceUrl}${yotiUpdateApi}?code=${groupServiceKey}`);
     var response = await fetch(`${groupServiceUrl}${yotiUpdateApi}?code=${groupServiceKey}`, {
         method: "PUT",
         mode: "same-origin",
@@ -17,6 +20,7 @@ exports.updateUserService =  async function (userId, yotiId){
           notes: ""
         }),
       });
+      context.log(response);
       if (response.status === 200){
       var json = await response.json();
       if (json.hasContent && json.isSuccessful){
